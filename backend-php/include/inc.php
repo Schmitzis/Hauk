@@ -3,7 +3,7 @@
 // An include file containing constants and common functions for the Hauk
 // backend. It loads the configuration file and declares it as a constant.
 
-const BACKEND_VERSION = "1.6.1";
+const BACKEND_VERSION = "1.6.2";
 const LANGUAGES = ["ca", "de", "en", "eu", "fr", "it", "nb_NO", "nl", "nn", "ro", "ru", "tr", "uk"];
 
 // Create mode for create.php. Corresponds with the constants from the Android
@@ -136,7 +136,7 @@ const DEFAULTS = array(
     "reserved_links"        => [],
     "reserve_whitelist"     => false,
     "link_style"            => LINK_4_PLUS_4_UPPER_CASE,
-    "map_tile_uri"          => 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    "map_tile_uri"          => 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
     "map_attribution"       => 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>',
     "default_zoom"          => 14,
     "max_zoom"              => 19,
@@ -807,18 +807,18 @@ function authenticated() {
             global $LANG;
             if (!isset($_POST["usr"])) die($LANG["username_required"]);
             requirePOST("pwd", "usr");
-            if (file_exists(getConfig("htpasswd_path"))) {
-                $file = fopen(getConfig("htpasswd_path"), "r");
-                $authed = false;
-                while (($line = fgets($file)) !== false && !$authed) {
-                    $creds = explode(":", trim($line));
-                    if ($creds[0] == $_POST["usr"]) {
-                        $authed = password_verify($_POST["pwd"], $creds[1]);
-                    }
+            // Jump out if we cannot find the htpasswd file.
+            if (!file_exists(getConfig("htpasswd_path"))) die($LANG["cannot_find_password_file"]);
+            $file = fopen(getConfig("htpasswd_path"), "r");
+            $authed = false;
+            while (($line = fgets($file)) !== false && !$authed) {
+                $creds = explode(":", trim($line));
+                if ($creds[0] == $_POST["usr"]) {
+                    $authed = password_verify($_POST["pwd"], $creds[1]);
                 }
-                fclose($file);
-                return $authed;
             }
+            fclose($file);
+            return $authed;
 
         case LDAP:
             // LDAP-based authentication.
